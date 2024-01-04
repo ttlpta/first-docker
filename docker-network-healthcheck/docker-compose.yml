@@ -1,0 +1,59 @@
+version: "3.4"
+
+services:
+  app:
+    image: learning-docker/docker-node-mongo-redis:production
+    volumes:
+      - ./public/images:/app/public/images
+    environment: # phần này ta định nghĩa ở file .env nhé
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - PORT=${PORT}
+    ports:
+      - "${PORT}:${PORT}" # phần này ta định nghĩa ở file .env nhé
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - db
+    networks:
+      - db-network
+      - redis-network
+    healthcheck:
+      test: wget --quiet --tries=1 --spider http://localhost:${PORT} || exit 1z
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  db:
+    image: mongo
+    volumes:
+      - .docker/data/db:/data/db
+    restart: unless-stopped
+    networks:
+      - db-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo db:27017/speech-api --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  
+  redis:
+    image: redis:5-alpine
+    volumes:
+      - .docker/data/redis:/data
+    restart: unless-stopped
+    networks:
+      - redis-network
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+#Docker Networks
+networks:
+  db-network:
+    driver: bridge
+  redis-network:
+    driver: bridge

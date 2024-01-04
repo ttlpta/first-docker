@@ -1,0 +1,10 @@
+version: "3.4"
+
+services:
+  app:
+    image: learning-docker/python:v1
+    ports:
+      - "${PUBLIC_PORT}:${PORT}"
+    restart: unless-stopped
+    environment:
+      PORT: ${PORT}
